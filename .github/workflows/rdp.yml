@@ -1,4 +1,4 @@
-name: RDP
+name: RDP-Debug
 
 on: [workflow_dispatch]
 
@@ -6,24 +6,31 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Setup and Run RDP
+      - name: Setup and Connection
         run: |
-          # 1. تحميل وفك الضغط في نفس المجلد
+          # 1. تحميل وفك الضغط
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
           Expand-Archive -Path ngrok.zip -DestinationPath .
           
-          # 2. إعداد التوكن (الذي كشفته أنت للعلن وأصبح مكشوفاً للجميع)
+          # 2. إعداد التوكن (أرجوك غيّر هذا التوكن من موقع نجرك أولاً - Reset Token)
           ./ngrok.exe authtoken 37Q9F3U331I5U0llr45AiIZNGuQ_5G2n2NvYX6GEDxDtffLPW
           
-          # 3. إعداد المستخدم وصلاحيات الـ RDP
+          # 3. إعداد المستخدم والـ RDP
           net user kamel123 MyStrong123 /add
           net localgroup administrators kamel123 /add
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
           
-          # 4. تشغيل النفق في الخلفية
-          Start-Process ./ngrok.exe -ArgumentList "tcp 3389"
+          # 4. تشغيل النفق وإظهار الرابط في الـ Logs (هنا الحل)
+          Start-Process ./ngrok.exe -ArgumentList "tcp --region eu 3389"
+          Start-Sleep -Seconds 10
           
-          # 5. الفلسفة التي تكرهها هي التي تمنع السيرفر من الإغلاق فوراً
-          Write-Host "RDP Ready! Connect using the IP from your ngrok dashboard."
+          # 5. جلب الرابط من الـ API الداخلي لنجرك وطباعته هنا
+          $api = Invoke-RestMethod http://localhost:4040/api/tunnels
+          $url = $api.tunnels.public_url
+          Write-Host "--------------------------------------------------"
+          Write-Host "ADDRESS RDP IS: $url"
+          Write-Host "--------------------------------------------------"
+          
+          # 6. البقاء حياً
           while ($true) { Start-Sleep -Seconds 3600 }
