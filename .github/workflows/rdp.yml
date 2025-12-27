@@ -1,4 +1,4 @@
-name: RDP-Final-V1
+name: RDP-Debug-Direct
 
 on: [workflow_dispatch]
 
@@ -6,29 +6,26 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Preparation and Setup
+      - name: Preparation and RDP Setup
         run: |
-          # 1. تحميل أداة ngrok وفك ضغطها في المجلد الحالي
+          # 1. تحميل وفك الضغط
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
           Expand-Archive -Path ngrok.zip -DestinationPath .
           
-          # 2. ربط التوكن المخزن في الـ Secrets (هذا هو التعديل الذي سألت عنه)
+          # 2. ربط التوكن
           ./ngrok.exe authtoken ${{ secrets.NGROK_AUTH_TOKEN }}
           
-          # 3. إعداد مستخدم جديد وصلاحيات الوصول عن بُعد
+          # 3. إعداد المستخدم وصلاحيات الـ RDP
           net user kamel123 MyStrong123 /add
           net localgroup administrators kamel123 /add
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          
-          # 4. تشغيل النفق في الخلفية (تحديد المنطقة لضمان السرعة)
-          Start-Process ./ngrok.exe -ArgumentList "tcp --region ap 3389"
-          
-          # 5. طباعة رسالة نجاح في السجلات
+
+      - name: Run Ngrok and Show Status
+        run: |
           Write-Host "--------------------------------------------------"
-          Write-Host "RDP is now active. Go to Ngrok Dashboard to get the IP."
-          Write-Host "User: kamel123 | Pass: MyStrong123"
+          Write-Host "Starting Ngrok... If it fails, the error will appear below."
+          Write-Host "If it works, the URL will be displayed here."
           Write-Host "--------------------------------------------------"
-          
-          # 6. أمر البقاء حياً لمنع إغلاق السيرفر فوراً
-          while ($true) { Start-Sleep -Seconds 3600 }
+          # تشغيل مباشر في الواجهة لرؤية النتائج فوراً
+          ./ngrok.exe tcp --region ap 3389
