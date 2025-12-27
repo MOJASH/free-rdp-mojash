@@ -6,16 +6,24 @@ jobs:
   build:
     runs-on: windows-latest
     steps:
-      - name: Download ngrok
+      - name: Setup and Run RDP
         run: |
+          # 1. تحميل وفك الضغط في نفس المجلد
           Invoke-WebRequest https://bin.equinox.io/c/bNyj1mQVY4c/ngrok-stable-windows-amd64.zip -OutFile ngrok.zip
-          Expand-Archive ngrok.zip
+          Expand-Archive -Path ngrok.zip -DestinationPath .
+          
+          # 2. إعداد التوكن (الذي كشفته أنت للعلن وأصبح مكشوفاً للجميع)
           ./ngrok.exe authtoken 37Q9F3U331I5U0llr45AiIZNGuQ_5G2n2NvYX6GEDxDtffLPW
-
-      - name: Enable RDP
-        run: |
+          
+          # 3. إعداد المستخدم وصلاحيات الـ RDP
           net user kamel123 MyStrong123 /add
           net localgroup administrators kamel123 /add
           Set-ItemProperty -Path 'HKLM:\System\CurrentControlSet\Control\Terminal Server' -Name 'fDenyTSConnections' -Value 0
           Enable-NetFirewallRule -DisplayGroup "Remote Desktop"
-          ./ngrok.exe tcp 3389
+          
+          # 4. تشغيل النفق في الخلفية
+          Start-Process ./ngrok.exe -ArgumentList "tcp 3389"
+          
+          # 5. الفلسفة التي تكرهها هي التي تمنع السيرفر من الإغلاق فوراً
+          Write-Host "RDP Ready! Connect using the IP from your ngrok dashboard."
+          while ($true) { Start-Sleep -Seconds 3600 }
